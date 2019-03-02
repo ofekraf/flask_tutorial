@@ -1,16 +1,22 @@
 import os
 from flask import Flask
 
+#file locations
+SECRET_KEY_VAL = 'dev' # todo  - should be overridden with a random value when deploying.
+CONFIG_FILE_PATH = 'config.py'
+DATABASE_FILE_PATH = 'flaskr.sqlite'
+
+
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
-        SECRET_KEY='dev', # todo  - change this when deploying
-        DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
+        SECRET_KEY=SECRET_KEY_VAL,
+        DATABASE=os.path.join(app.instance_path, DATABASE_FILE_PATH),
     )
     if test_config is None:
         # load the instance config, if it exists, when not testing
-        app.config.from_pyfile('config.py', silent=True)
+        app.config.from_pyfile(CONFIG_FILE_PATH, silent=True)
     else:
         # load the test config if passed in
         app.config.from_mapping(test_config)
