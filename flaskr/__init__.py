@@ -33,6 +33,9 @@ def create_app(test_config=None):
     def hello():
         return HELLO_APP_RETURNED_MESSAGE
 
+    from . import auth
+    app.register_blueprint(auth.bp)
+
     from . import db
     db.init_app(app)
 
