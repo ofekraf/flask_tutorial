@@ -4,4 +4,3 @@ def attempt():
 attempt()
 attempt()
 attempt()
-attempt()
