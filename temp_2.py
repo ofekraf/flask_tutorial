@@ -3,3 +3,4 @@ def second_attempt():
     return x
 
 print(second_attempt())
+print(second_attempt())
