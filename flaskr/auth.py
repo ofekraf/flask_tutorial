@@ -3,14 +3,15 @@ from flask import (Blueprint, flash, g, redirect, render_template, request, sess
 from werkzeug.security import check_password_hash, generate_password_hash
 from flaskr.db import get_db
 
-CHECK_EXISTING_USERNAME_SQL_QUERY = 'SELECT * FROM user WHERE username = ?'
 
 AUTH_PREEFIX = '/auth'
 BLUEPRINT_NAME = 'auth'
 
-#SQL COMMANDS
+#SQL QUERIES
 INSERT_NEW_USER_SQL_COMMAND = 'INSERT INTO user (username, password) VALUES (?, ?)'
-CHECK_EXISTING_USERNAME_SQL_QUERY = 'SELECT id FROM user WHERE username = ?'
+CHECK_EXISTING_USERNAME_REGESTRATION_SQL_QUERY = 'SELECT id FROM user WHERE username = ?'
+CHECK_EXISTING_USERNAME_LOGIN_SQL_QUERY = 'SELECT * FROM user WHERE username = ?'
+USER_ID_SQL_QUERY = 'SELECT * FROM user WHERE id = ?'
 
 #error messages
 MISSING_PASSWORD_ERROR = 'Password is required.'
@@ -51,7 +52,27 @@ def login():
         flash(error)
     return render_template('auth/login.html')
 
+@bp.before_app_request
+def load_logged_in_user():
+    user_id = session.get('user_id')
+    if user_id is None:
+        g.user = None
+    else:
+        g.user = get_db().execute(USER_ID_SQL_QUERY, (user_id,)).fetchone()
 
+
+@bp.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
+
+def login_required(view):
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if g.user is None:
+            return redirect(url_for('auth.login'))
+        return view(**kwargs)
+    return wrapped_view
 
 
 def check_error_user_registration(db, password, username):
@@ -61,7 +82,7 @@ def check_error_user_registration(db, password, username):
         error = MISSING_USERNAME_ERROR
     elif not password:
         error = MISSING_PASSWORD_ERROR
-    elif db.execute(CHECK_EXISTING_USERNAME_SQL_QUERY,(username,)).fetchone() is not None:
+    elif db.execute(CHECK_EXISTING_USERNAME_REGESTRATION_SQL_QUERY, (username,)).fetchone() is not None:
         error = EXISTING_USERNAME_ERROR.format(username)
     return error
 
@@ -69,8 +90,7 @@ def check_error_user_registration(db, password, username):
 def check_error_user_login(db, password, username):
     """ :return: an error message if such occurred. None otherwise    """
     error = None
-    user = db.execute(CHECK_EXISTING_USERNAME_SQL_QUERY,
-                      (username,)).fetchone()
+    user = db.execute(CHECK_EXISTING_USERNAME_LOGIN_SQL_QUERY,(username,)).fetchone()
     if user is None:
         error = INCORRECT_USERNAME_ERROR
     elif not check_password_hash(user['password'], password):
