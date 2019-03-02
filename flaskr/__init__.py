@@ -5,6 +5,7 @@ from flask import Flask
 SECRET_KEY_VAL = 'dev' # todo  - should be overridden with a random value when deploying.
 CONFIG_FILE_PATH = 'config.py'
 DATABASE_FILE_PATH = 'flaskr.sqlite'
+HELLO_APP_RETURNED_MESSAGE = 'My flask site is better than your flask site!'
 
 
 def create_app(test_config=None):
@@ -30,6 +31,6 @@ def create_app(test_config=None):
     # a simple page that says hello
     @app.route('/hello')
     def hello():
-        return 'Hello, World!'
+        return HELLO_APP_RETURNED_MESSAGE
 
     return app
