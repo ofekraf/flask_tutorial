@@ -24,17 +24,49 @@ def register():
         username = request.form['username']
         password = request.form['password']
         db = get_db()
-        error = None
-
-        if not username:
-            error = MISSING_USERNAME_ERROR
-        elif not password:
-            error = MISSING_PASSWORD_ERROR
-        elif db.execute(CHECK_EXISTING_USERNAME_SQL_QUERY, (username,)).fetchone() is not None:
-            error = EXISTING_USERNAME_ERROR.format(username)
+        error = check_error_user_registration(db, password, username)
         if error is None:
             db.execute(INSERT_NEW_USER_SQL_COMMAND,(username, generate_password_hash(password)))
             db.commit()
-            return redirect(url_for('auth.login'))
+            return redirect(url_for('auth.login')) #todo - change to constant?
         flash(error)
-    return render_template('auth/register.html')
+    return render_template('auth/register.html') #todo - change to constant?
+
+
+def check_error_user_registration(db, password, username):
+    """ :return: an error is such occurred. None otherwise    """
+    error = None
+    if not username:
+        error = MISSING_USERNAME_ERROR
+    elif not password:
+        error = MISSING_PASSWORD_ERROR
+    elif db.execute(CHECK_EXISTING_USERNAME_SQL_QUERY,
+                    (username,)).fetchone() is not None:
+        error = EXISTING_USERNAME_ERROR.format(username)
+    return error
+
+
+@bp.route('/login', methods=('GET', 'POST'))
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        db = get_db()
+        error = None
+        user = db.execute(
+            'SELECT * FROM user WHERE username = ?', (username,)
+        ).fetchone()
+
+        if user is None:
+            error = 'Incorrect username.'
+        elif not check_password_hash(user['password'], password):
+            error = 'Incorrect password.'
+
+        if error is None:
+            session.clear()
+            session['user_id'] = user['id']
+            return redirect(url_for('index'))
+
+        flash(error)
+
+    return render_template('auth/login.html')
